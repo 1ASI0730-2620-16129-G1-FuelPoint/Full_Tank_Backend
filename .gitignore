@@ -1,0 +1,16 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+appsettings.Local.json
+appsettings.Development.json
+*.Local.json
+*.log
+opencode.jsonc
+.claude/
+.codex/
+.vscode/
+.serena/
+__pycache__/

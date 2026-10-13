@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <data name="GenericError" xml:space="preserve">
+    <value>An error occurred.</value>
+  </data>
+    <data name="OperationCancelled" xml:space="preserve">
+    <value>The operation was cancelled.</value>
+  </data>
+    <data name="DatabaseError" xml:space="preserve">
+    <value>A database error occurred.</value>
+  </data>
+    <data name="InternalServerError" xml:space="preserve">
+    <value>An unexpected internal error occurred.</value>
+  </data>
+    <data name="ExternalServiceError" xml:space="preserve">
+    <value>An external service error occurred.</value>
+  </data>
+    <data name="ValidationError" xml:space="preserve">
+    <value>The submitted data is invalid.</value>
+  </data>
+    <data name="NotFound" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+    <data name="UserNotFound" xml:space="preserve">
+    <value>User not found.</value>
+  </data>
+    <data name="EmailAlreadyTaken" xml:space="preserve">
+    <value>The email {0} is already registered.</value>
+  </data>
+    <data name="UsernameAlreadyTaken" xml:space="preserve">
+    <value>The username {0} is already taken.</value>
+  </data>
+    <data name="InvalidCredentials" xml:space="preserve">
+    <value>Invalid email or password.</value>
+  </data>
+    <data name="PasswordChangeFailed" xml:space="preserve">
+    <value>The password could not be changed.</value>
+  </data>
+    <data name="BuyerCompanyNotFound" xml:space="preserve">
+    <value>Buyer company not found.</value>
+  </data>
+    <data name="ProviderCompanyNotFound" xml:space="preserve">
+    <value>Provider company not found.</value>
+  </data>
+    <data name="RucAlreadyTaken" xml:space="preserve">
+    <value>The RUC {0} is already registered.</value>
+  </data>
+</root>

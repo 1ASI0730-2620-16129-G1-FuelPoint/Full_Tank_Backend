@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <data name="GenericError" xml:space="preserve">
+    <value>Ocurrió un error.</value>
+  </data>
+    <data name="OperationCancelled" xml:space="preserve">
+    <value>La operación fue cancelada.</value>
+  </data>
+    <data name="DatabaseError" xml:space="preserve">
+    <value>Ocurrió un error de base de datos.</value>
+  </data>
+    <data name="InternalServerError" xml:space="preserve">
+    <value>Ocurrió un error interno inesperado.</value>
+  </data>
+    <data name="ExternalServiceError" xml:space="preserve">
+    <value>Ocurrió un error de servicio externo.</value>
+  </data>
+    <data name="ValidationError" xml:space="preserve">
+    <value>Los datos enviados son inválidos.</value>
+  </data>
+    <data name="NotFound" xml:space="preserve">
+    <value>El recurso solicitado no fue encontrado.</value>
+  </data>
+    <data name="UserNotFound" xml:space="preserve">
+    <value>Usuario no encontrado.</value>
+  </data>
+    <data name="EmailAlreadyTaken" xml:space="preserve">
+    <value>El correo {0} ya está registrado.</value>
+  </data>
+    <data name="UsernameAlreadyTaken" xml:space="preserve">
+    <value>El nombre de usuario {0} ya está en uso.</value>
+  </data>
+    <data name="InvalidCredentials" xml:space="preserve">
+    <value>Correo o contraseña inválidos.</value>
+  </data>
+    <data name="PasswordChangeFailed" xml:space="preserve">
+    <value>No se pudo cambiar la contraseña.</value>
+  </data>
+    <data name="BuyerCompanyNotFound" xml:space="preserve">
+    <value>Empresa compradora no encontrada.</value>
+  </data>
+    <data name="ProviderCompanyNotFound" xml:space="preserve">
+    <value>Empresa proveedora no encontrada.</value>
+  </data>
+    <data name="RucAlreadyTaken" xml:space="preserve">
+    <value>El RUC {0} ya está registrado.</value>
+  </data>
+</root>

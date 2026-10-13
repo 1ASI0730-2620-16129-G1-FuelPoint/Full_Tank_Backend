@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Ok" xml:space="preserve">
+    <value>Aceptar</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="InternalServerError" xml:space="preserve">
+    <value>Error interno del servidor</value>
+  </data>
+  <data name="GenericError" xml:space="preserve">
+    <value>Ocurrió un error.</value>
+  </data>
+</root>
