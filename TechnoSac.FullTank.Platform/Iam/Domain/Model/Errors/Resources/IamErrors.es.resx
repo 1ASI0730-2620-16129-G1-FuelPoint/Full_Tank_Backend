@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <data name="Iam.InvalidCredentials" xml:space="preserve">
+    <value>Correo o contraseña inválidos.</value>
+  </data>
+    <data name="Iam.EmailAlreadyTaken" xml:space="preserve">
+    <value>El correo especificado ya está registrado.</value>
+  </data>
+    <data name="Iam.UsernameAlreadyTaken" xml:space="preserve">
+    <value>El nombre de usuario especificado ya está en uso.</value>
+  </data>
+    <data name="Iam.RucAlreadyTaken" xml:space="preserve">
+    <value>El RUC especificado ya está registrado.</value>
+  </data>
+    <data name="Iam.UserCreationFailed" xml:space="preserve">
+    <value>Ocurrió un error al crear el usuario.</value>
+  </data>
+</root>
