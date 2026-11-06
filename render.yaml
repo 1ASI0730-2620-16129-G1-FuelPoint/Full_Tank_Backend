@@ -1,0 +1,80 @@
+# AV2 academic environment. MySQL uses a PAID compute plan and disk.
+# This file prepares infrastructure; it does not create resources until applied.
+projects:
+  - name: fulltank-av2
+    environments:
+      - name: av2
+        services:
+          - type: pserv
+            name: fulltank-av2-mysql
+            runtime: docker
+            region: oregon
+            plan: 0.5c-512mb
+            dockerfilePath: ./deploy/mysql/Dockerfile
+            dockerContext: .
+            autoDeployTrigger: 'off'
+            disk:
+              name: fulltank-av2-mysql-data
+              mountPath: /var/lib/mysql
+              sizeGB: 1
+            envVars:
+              - key: MYSQL_DATABASE
+                value: fulltank_av2
+              - key: MYSQL_USER
+                value: fulltank
+              - key: MYSQL_PASSWORD
+                generateValue: true
+              - key: MYSQL_ROOT_PASSWORD
+                generateValue: true
+          - type: web
+            name: fulltank-av2-api
+            runtime: docker
+            region: oregon
+            plan: free
+            dockerfilePath: ./Dockerfile
+            dockerContext: .
+            autoDeployTrigger: 'off'
+            healthCheckPath: /health
+            envVars:
+              - key: ASPNETCORE_ENVIRONMENT
+                value: Production
+              - key: PORT
+                value: '10000'
+              - key: Database__Host
+                fromService:
+                  type: pserv
+                  name: fulltank-av2-mysql
+                  property: host
+              - key: Database__Port
+                value: '3306'
+              - key: Database__Name
+                value: fulltank_av2
+              - key: Database__User
+                value: fulltank
+              - key: Database__Password
+                fromService:
+                  type: pserv
+                  name: fulltank-av2-mysql
+                  envVarKey: MYSQL_PASSWORD
+              - key: Database__SslMode
+                value: Required
+              - key: Database__ApplyMigrationsOnStartup
+                value: 'true'
+              - key: Database__SeedDemoData
+                value: 'true'
+              - key: Database__DemoPassword
+                sync: false
+              - key: TokenSettings__Secret
+                generateValue: true
+              - key: Cors__AllowedOrigins__0
+                value: https://full-tank-964e2.web.app
+              - key: Cors__AllowedOrigins__1
+                value: https://full-tank-964e2.firebaseapp.com
+              - key: AcademicDemo__Enabled
+                value: 'true'
+              - key: PaymentSettings__EnableSimulation
+                value: 'true'
+              - key: Swagger__Enabled
+                value: 'true'
+              - key: Hosting__HttpsRedirectionEnabled
+                value: 'false'
