@@ -1,150 +1,92 @@
-# FullTank AV2 — preparación para Render
+# FullTank AV2: Render Free y PostgreSQL
 
-Resultado de las comprobaciones locales: [VALIDACION_RENDER_AV2.md](VALIDACION_RENDER_AV2.md).
+La API usa .NET 10, Entity Framework Core 10 y Npgsql con PostgreSQL 18.
+El frontend sigue en Firebase Hosting. El pago es simulado y no procesa dinero real.
 
-La configuración publica la API .NET 10 y MySQL 8.0.46 en el mismo entorno y
-región. La API usa `Production`, con un modo académico explícito: pagos y
-comprobantes simulados, sin procesar dinero ni emitir comprobantes electrónicos
-SUNAT. Swagger identifica ese alcance.
-
-## Recursos y coste
+## Recursos
 
 `render.yaml` define el proyecto `fulltank-av2`, entorno `av2`:
 
-| Recurso | Configuración |
-|---|---|
-| `fulltank-av2-api` | Web Service Docker, plan `free`, puerto `PORT`, usuario sin privilegios |
-| `fulltank-av2-mysql` | Private Service Docker, plan **de pago** `0.5c-512mb`, MySQL 8.0.46 |
-| Datos MySQL | Disco persistente **de pago**, 1 GB, `/var/lib/mysql` |
-| Región | Oregon en ambos servicios, dentro del mismo workspace |
-
-La API gratuita puede suspenderse por inactividad: abrir `/health` y esperar su
-respuesta antes de la sustentación. Para evitar esa espera se puede elegir un
-plan de pago. Revisar el coste total mostrado por Render antes de crear recursos.
-Preparar estos archivos no crea infraestructura ni activa cargos.
-
-MySQL no se publica en Internet. La API recibe host y contraseña con
-`fromService` y usa un usuario propio, distinto de root. Render genera las
-contraseñas de MySQL y la clave JWT. `Database__SslMode=Required` cifra la conexión
-privada, sin verificar la identidad del certificado autofirmado. Con MySQL
-externo y CA conocida usar `VerifyFull` y la configuración del proveedor.
-
-## Publicación
-
-1. Subir **el contenido de `backend-main` como raíz del repositorio backend**,
-   incluyendo los cambios previos de integración, `DatabaseSeeder.cs`,
-   `Dockerfile`, `.dockerignore`, `deploy/`, `render.yaml` y las clases nuevas.
-   Esta copia local todavía no tiene remoto Git configurado. No subir archivos
-   locales de configuración, `.env` ni secretos. Para un monorepo adaptar
-   `dockerContext` y `dockerfilePath` a su raíz.
-2. Si se dispone del CLI de Render, ejecutar `render blueprints validate render.yaml`.
-   La validación con el esquema JSON público solo comprueba la estructura;
-   no acredita permisos del workspace, planes ni acceso al repositorio remoto.
-3. En Render elegir **New → Blueprint**, conectar el repositorio y seleccionar
-   la rama de entrega que contenga el Blueprint.
-4. Revisar servicios, región y coste. Completar **`Database__DemoPassword` con
-   una contraseña privada de al menos 12 caracteres** para las dos cuentas demo.
-   Esta contraseña es distinta de las credenciales de MySQL.
-5. Aplicar el Blueprint. Si la API arranca antes de la primera inicialización de
-   MySQL y falla, revisar sus logs y volver a desplegar **la API** cuando la base
-   esté lista.
-6. Verificar `https://<API-ASIGNADA-POR-RENDER>/health` → HTTP 200 y
-   `https://<API-ASIGNADA-POR-RENDER>/swagger/index.html`. Usar la URL que asigne
-   Render, sin presuponer un subdominio disponible.
-
-Los despliegues automáticos están desactivados para fijar la versión del hito.
-Las correcciones se publican desplegando manualmente el commit revisado.
-`sync: false` solicita la contraseña demo al crear el Blueprint; las rotaciones
-posteriores se hacen en las variables del servicio, sin escribir secretos en YAML.
-
-## Variables de la API
-
-| Variable | Uso |
-|---|---|
-| `ASPNETCORE_ENVIRONMENT=Production` | Excluye configuración local y logging sensible de desarrollo |
-| `PORT=10000` | Escucha HTTP en `0.0.0.0`; Render gestiona HTTPS en su borde |
-| `Database__Host/Port/Name/User/Password` | Conexión MySQL construida con escape correcto de contraseñas |
-| `ConnectionStrings__DefaultConnection` | Alternativa para MySQL existente; si se define tiene prioridad |
-| `TokenSettings__Secret` | Clave JWT aleatoria privada de al menos 32 caracteres |
-| `Cors__AllowedOrigins__0` y `__1` | Orígenes HTTPS exactos de Firebase, sin ruta ni barra final |
-| `Database__ApplyMigrationsOnStartup=true` | Aplica migraciones antes de servir; un fallo impide publicar la API |
-| `Database__SeedDemoData=true` | Inserta datos demo en una transacción, sin reiniciar la base |
-| `Database__DemoPassword` | Contraseña al crear cuentas demo; **no rota** contraseñas ya existentes |
-| `AcademicDemo__Enabled=true` | Autoriza expresamente simulación y datos académicos fuera de Development |
-| `PaymentSettings__EnableSimulation=true` | Checkout simulado con comprobantes `SIM-INV-*` |
-| `Swagger__Enabled=true` | Documentación para evaluar; los endpoints protegidos siguen requiriendo JWT |
-| `Hosting__HttpsRedirectionEnabled=false` | Evita redirecciones internas; Render ya redirige HTTP a HTTPS |
-
-Production normal mantiene simulación y Swagger desactivados por defecto.
-Desactivar la simulación **no activa una pasarela real**: el checkout rechazará
-pagos mientras no se implemente esa integración.
-
-## Cuentas y datos
-
-| Rol | Correo | Contraseña |
+| Recurso | Plan | Región |
 |---|---|---|
-| Comprador | `logistics@transportesdelsur.com` | La definida en `Database__DemoPassword` |
-| Proveedor | `dispatch@petroandes.com` | La definida en `Database__DemoPassword` |
+| `fulltank-av2-api` | Web Service Docker, **free** | Oregon |
+| `fulltank-av2-postgres` | Render PostgreSQL, **free**, 1 GB | Oregon |
 
-El seeder incluye catálogo, inventario, equipos, flota, solicitudes y pedidos de
-ejemplo. Si la cuenta principal ya existe, no vuelve a insertar ni restablece
-datos. Usar una base exclusiva de AV2. En Development se conserva la contraseña
-de prueba anterior `123456`.
+No se crean servicios privados MySQL ni discos de pago. La base gratuita de Render
+**vence 30 días después de su creación**, no incluye backups y solo se admite una
+base gratuita por workspace. La API se suspende tras 15 minutos sin tráfico y
+puede tardar aproximadamente un minuto en arrancar con la primera petición.
+Revisar las cuotas gratuitas de compilación, horas y transferencia en el Dashboard.
 
-Las migraciones al arrancar se destinan a esta única instancia académica. Antes
-de migrar datos que deban conservarse, hacer backup con `mysqldump`, revisar SQL
-y comprobar duplicados según el README. El disco no sustituye backups coherentes
-de MySQL. Cambiar `MYSQL_PASSWORD` no modifica la cuenta ya existente dentro del
-disco: una rotación requiere actualizar MySQL y las variables de la API.
+## Conexión y secretos
 
-## Conectar el frontend
+La API recibe la URL interna de PostgreSQL mediante `DATABASE_URL` y
+`fromDatabase.connectionString`. El parser convierte esa URL al formato Npgsql,
+decodifica usuario y contraseña, exige TLS en Production y limita el pool a 20.
+La API y la base deben estar en el mismo workspace y región.
+`ipAllowList: []` deshabilita acceso externo a la base; la API usa la red interna.
 
-Tras verificar el backend público, construir **`frontend-backend`** con:
+Render genera `TokenSettings__Secret` y `Database__DemoPassword` como valores
+privados. La contraseña demo permite acceder a las cuentas del seed:
+`logistics@transportesdelsur.com` (comprador) y `dispatch@petroandes.com` (proveedor).
+Consultar la contraseña en las variables privadas del servicio y compartirla por un
+canal privado con los evaluadores. No guardarla en GitHub ni en el frontend.
 
-```dotenv
-VITE_USE_FAKE_API=false
-VITE_FULLTANK_API_URL=https://<API-ASIGNADA-POR-RENDER>/api/v1
-```
+También se admiten `ConnectionStrings__DefaultConnection` en formato Npgsql o URL
+PostgreSQL, y las variables separadas `Database__Host`, `Database__Port` (5432),
+`Database__Name`, `Database__User`, `Database__Password`, `Database__SslMode`.
+La precedencia es conexión completa, `DATABASE_URL`, variables separadas.
 
-Usar `npm run build` y publicar su `dist` en Firebase. El workflow actual del
-frontend usa `build:demo`: debe cambiarse antes de confiarle la publicación
-integrada. Nunca publicar `localhost:5204` como URL de la API.
+## Despliegue desde GitHub
 
-## Verificación reproducible
+1. Ejecutar pruebas, construir la imagen y ejecutar `python3 deploy/smoke_render.py`.
+2. Integrar por GitFlow la rama de trabajo en `develop`, crear una release y llevar
+   la versión validada a `main`. Conservar los commits originales.
+3. Validar el YAML con `render blueprints validate render.yaml` si está disponible
+   el CLI; la validación con el esquema JSON comprueba solamente su estructura.
+4. Crear o volver a planificar el Blueprint desde el repositorio backend y `main`.
+   Revisar que **API y PostgreSQL muestran Free** antes de aplicar el plan.
+5. La API aplica la migración PostgreSQL y después el seed académico en una
+   transacción. Un fallo de inicialización impide que se publique como saludable.
+   Si PostgreSQL aún está aprovisionándose, revisar los logs y reintentar la API.
+6. Esperar al estado `live` y verificar `/health` (200), `/health/live` (200),
+   `/swagger/index.html`, el acceso con ambos roles y el pago simulado.
+7. En el repositorio frontend configurar la URL pública real:
+   `VITE_USE_FAKE_API=false` y `VITE_FULLTANK_API_URL=https://<API>/api/v1`.
+   Compilar con `npm run build`; `build:demo` usa la API simulada y no verifica la
+   integración con el backend. Publicar `dist` desde GitHub Actions en Firebase.
 
-Desde la raíz del repositorio backend:
+Los orígenes permitidos son `https://full-tank-964e2.web.app` y
+`https://full-tank-964e2.firebaseapp.com`. El Blueprint configura el despliegue de la
+API tras superar CI en `main`. `/health` comprueba conectividad y migraciones;
+`/health/live` solo comprueba que el proceso está activo.
+
+## Migración desde MySQL
+
+Esta versión crea un **esquema PostgreSQL nuevo**. Las migraciones MySQL antiguas se
+conservan en `deploy/legacy-mysql-migrations` como referencia y no se compilan.
+No se deben ejecutar sobre PostgreSQL ni copiar su tabla `__EFMigrationsHistory`.
+La base MySQL existente no se elimina ni se transforma automáticamente.
+
+Para datos de negocio que deban conservarse: realizar un backup MySQL, diseñar y
+probar la importación en una base PostgreSQL de staging, verificar recuentos,
+identificadores, relaciones, decimales y fechas; ajustar las secuencias de identidad
+tras importar IDs explícitos. No habilitar el seed sobre una importación parcial.
+En un despliegue académico nuevo se utiliza el seed reproducible incluido.
+
+## Verificación local del contenedor
 
 ```bash
-dotnet test full-tank-platform.sln
 docker build -t fulltank-av2-api:local .
-docker build -t fulltank-av2-mysql:local -f deploy/mysql/Dockerfile .
 python3 deploy/smoke_render.py
 ```
 
-El smoke test crea red, volumen, MySQL y API **desechables**, con contraseñas
-aleatorias, y elimina solo esos recursos al finalizar. Las solicitudes viajan
-por la red privada de Docker, sin publicar puertos al host. No toca la base local
-existente. Prueba ambos contenedores con límite de 512 MB y un `PORT` distinto
-de 10000, falta de migraciones, Production, Swagger, CORS permitido/rechazado,
-JWT, ambos roles, checkout simulado y persistencia tras reiniciar MySQL y API
-sin duplicar datos iniciales.
+La prueba crea PostgreSQL 18 con TLS, API, cliente HTTP, red y volumen **desechables**.
+Usa contraseñas aleatorias y elimina exclusivamente sus propios recursos.
+Verifica migraciones, seed, Swagger, CORS, JWT, ambos roles, pago académico,
+persistencia y ausencia de duplicados tras reiniciar API y PostgreSQL.
 
-`/health` devuelve 503 si MySQL no responde o faltan migraciones. `/health/live`
-solo indica que el proceso está vivo. Las respuestas no exponen excepciones ni
-credenciales. El health check no sustituye el recorrido completo de negocio ni
-las entrevistas de validación AV2.
-
-## Evidencias después de publicar
-
-- URL pública, commit desplegado y captura de ambos servicios.
-- Swagger, requests/responses y persistencia al recargar/reiniciar.
-- Recorrido comprador → solicitud → proveedor → despacho → recepción → pago
-  simulado → comprobante, indicando expresamente el alcance académico.
-- Incorporar evidencias en 5.2.3.6 y 5.2.3.7 del informe AV2.
-
-Referencias oficiales consultadas:
-[Blueprints](https://render.com/docs/blueprint-spec),
-[MySQL](https://render.com/docs/deploy-mysql),
-[discos](https://render.com/docs/disks),
-[red privada](https://render.com/docs/private-network),
-[Web Services](https://render.com/docs/web-services).
+Referencias: [Render Free](https://render.com/docs/free),
+[PostgreSQL](https://render.com/docs/postgresql-creating-connecting),
+[Blueprint](https://render.com/docs/blueprint-spec),
+[Npgsql](https://www.npgsql.org/efcore/).

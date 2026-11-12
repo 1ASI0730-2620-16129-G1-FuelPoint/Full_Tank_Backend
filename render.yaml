@@ -1,69 +1,42 @@
-# AV2 academic environment. MySQL uses a PAID compute plan and disk.
-# This file prepares infrastructure; it does not create resources until applied.
+# Academic AV2: both resources use Render Free. PostgreSQL expires after 30 days.
 projects:
   - name: fulltank-av2
     environments:
       - name: av2
-        services:
-          - type: pserv
-            name: fulltank-av2-mysql
-            runtime: docker
+        databases:
+          - name: fulltank-av2-postgres
+            databaseName: fulltank_av2
+            user: fulltank
+            plan: free
             region: oregon
-            plan: 0.5c-512mb
-            dockerfilePath: ./deploy/mysql/Dockerfile
-            dockerContext: .
-            autoDeployTrigger: 'off'
-            disk:
-              name: fulltank-av2-mysql-data
-              mountPath: /var/lib/mysql
-              sizeGB: 1
-            envVars:
-              - key: MYSQL_DATABASE
-                value: fulltank_av2
-              - key: MYSQL_USER
-                value: fulltank
-              - key: MYSQL_PASSWORD
-                generateValue: true
-              - key: MYSQL_ROOT_PASSWORD
-                generateValue: true
+            postgresMajorVersion: '18'
+            ipAllowList: []
+        services:
           - type: web
             name: fulltank-av2-api
             runtime: docker
+            branch: main
             region: oregon
             plan: free
             dockerfilePath: ./Dockerfile
             dockerContext: .
-            autoDeployTrigger: 'off'
+            autoDeployTrigger: checksPass
             healthCheckPath: /health
             envVars:
               - key: ASPNETCORE_ENVIRONMENT
                 value: Production
               - key: PORT
                 value: '10000'
-              - key: Database__Host
-                fromService:
-                  type: pserv
-                  name: fulltank-av2-mysql
-                  property: host
-              - key: Database__Port
-                value: '3306'
-              - key: Database__Name
-                value: fulltank_av2
-              - key: Database__User
-                value: fulltank
-              - key: Database__Password
-                fromService:
-                  type: pserv
-                  name: fulltank-av2-mysql
-                  envVarKey: MYSQL_PASSWORD
-              - key: Database__SslMode
-                value: Required
+              - key: DATABASE_URL
+                fromDatabase:
+                  name: fulltank-av2-postgres
+                  property: connectionString
               - key: Database__ApplyMigrationsOnStartup
                 value: 'true'
               - key: Database__SeedDemoData
                 value: 'true'
               - key: Database__DemoPassword
-                sync: false
+                generateValue: true
               - key: TokenSettings__Secret
                 generateValue: true
               - key: Cors__AllowedOrigins__0
