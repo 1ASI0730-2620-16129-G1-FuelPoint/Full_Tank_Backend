@@ -1,4 +1,4 @@
-using MySql.Data.MySqlClient;
+using Npgsql;
 
 internal sealed record DatabaseSettings(
     string ConnectionString,
@@ -13,45 +13,43 @@ internal sealed record DatabaseSettings(
     public static DatabaseSettings FromEnvironment()
     {
         var rawConnectionString = Environment.GetEnvironmentVariable("FULLTANK_MCP_CONNECTION_STRING");
-        MySqlConnectionStringBuilder connectionBuilder;
+        NpgsqlConnectionStringBuilder connectionBuilder;
 
         if (!string.IsNullOrWhiteSpace(rawConnectionString))
         {
-            connectionBuilder = new MySqlConnectionStringBuilder(rawConnectionString);
+            connectionBuilder = new NpgsqlConnectionStringBuilder(rawConnectionString);
             var configuredSslMode = Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_SSL_MODE");
             if (!string.IsNullOrWhiteSpace(configuredSslMode))
                 connectionBuilder.SslMode = ParseSslMode(configuredSslMode);
             else if (!rawConnectionString.Contains("sslmode", StringComparison.OrdinalIgnoreCase) &&
                      !rawConnectionString.Contains("ssl mode", StringComparison.OrdinalIgnoreCase))
-                connectionBuilder.SslMode = MySqlSslMode.Disabled;
+                connectionBuilder.SslMode = SslMode.Require;
         }
         else
         {
             var user = Required("FULLTANK_MCP_DB_USER");
             var password = Required("FULLTANK_MCP_DB_PASSWORD");
 
-            connectionBuilder = new MySqlConnectionStringBuilder
+            connectionBuilder = new NpgsqlConnectionStringBuilder
             {
-                Server = Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_HOST") ?? "127.0.0.1",
-                Port = ParseUInt("FULLTANK_MCP_DB_PORT", 3306),
+                Host = Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_HOST") ?? "127.0.0.1",
+                Port = ParseInt("FULLTANK_MCP_DB_PORT", 5432),
                 Database = Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_NAME") ?? DefaultDatabase,
-                UserID = user,
+                Username = user,
                 Password = password,
-                ConnectionTimeout = 5,
-                DefaultCommandTimeout = 15,
-                SslMode = ParseSslMode(Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_SSL_MODE")),
-                AllowUserVariables = false
+                Timeout = 5,
+                CommandTimeout = 15,
+                SslMode = ParseSslMode(Environment.GetEnvironmentVariable("FULLTANK_MCP_DB_SSL_MODE"))
             };
         }
 
         if (string.IsNullOrWhiteSpace(connectionBuilder.Database))
             connectionBuilder.Database = DefaultDatabase;
 
-        connectionBuilder.ConnectionTimeout = Math.Min(connectionBuilder.ConnectionTimeout, 15u);
-        connectionBuilder.DefaultCommandTimeout = Math.Min(connectionBuilder.DefaultCommandTimeout, 30u);
-        connectionBuilder.AllowUserVariables = false;
-        if (connectionBuilder.SslMode == MySqlSslMode.Disabled && IsLoopback(connectionBuilder.Server))
-            connectionBuilder.AllowPublicKeyRetrieval = true;
+        connectionBuilder.Timeout = Math.Min(connectionBuilder.Timeout, 15);
+        connectionBuilder.CommandTimeout = Math.Min(connectionBuilder.CommandTimeout, 30);
+        connectionBuilder.MaxPoolSize = Math.Min(connectionBuilder.MaxPoolSize, 5);
+        connectionBuilder.SearchPath = "public";
 
         var writeTables = ParseCsv("FULLTANK_MCP_WRITE_TABLES");
         var maxRows = Math.Clamp(ParseInt("FULLTANK_MCP_MAX_ROWS", 25), 1, 100);
@@ -73,7 +71,7 @@ internal sealed record DatabaseSettings(
         var value = Environment.GetEnvironmentVariable(name);
         if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException(
-                $"Missing {name}. Configure the dedicated MySQL MCP account before starting the server.");
+                $"Missing {name}. Configure the dedicated PostgreSQL MCP account before starting the server.");
         return value;
     }
 
@@ -85,24 +83,17 @@ internal sealed record DatabaseSettings(
     private static int ParseInt(string name, int fallback) =>
         int.TryParse(Environment.GetEnvironmentVariable(name), out var value) ? value : fallback;
 
-    private static uint ParseUInt(string name, uint fallback) =>
-        uint.TryParse(Environment.GetEnvironmentVariable(name), out var value) ? value : fallback;
-
     private static bool ParseBool(string name) =>
         bool.TryParse(Environment.GetEnvironmentVariable(name), out var value) && value;
 
-    private static MySqlSslMode ParseSslMode(string? value)
+    private static SslMode ParseSslMode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return MySqlSslMode.Disabled;
-        if (Enum.TryParse<MySqlSslMode>(value, true, out var mode))
+            return SslMode.Require;
+        if (Enum.TryParse<SslMode>(value, true, out var mode))
             return mode;
         throw new InvalidOperationException(
-            $"Invalid FULLTANK_MCP_DB_SSL_MODE '{value}'. Use Disabled, Preferred, Required, VerifyCA, or VerifyFull.");
+            $"Invalid FULLTANK_MCP_DB_SSL_MODE '{value}'. Use Disable, Prefer, Require, VerifyCA, or VerifyFull.");
     }
 
-    private static bool IsLoopback(string host) =>
-        string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase);
 }
