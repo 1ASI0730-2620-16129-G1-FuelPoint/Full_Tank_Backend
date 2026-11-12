@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using Npgsql;
 using TechnoSac.FullTank.Platform.Shared.Infrastructure.Deployment;
 using Xunit;
 
@@ -9,7 +9,7 @@ public class DeploymentConfigurationTests
 {
     private static Dictionary<string, string?> Settings() => new()
     {
-        ["Database:Host"] = "mysql.internal",
+        ["Database:Host"] = "postgres.internal",
         ["Database:Name"] = "av2_test",
         ["Database:User"] = "test_user",
         ["Database:Password"] = "test-only;password=with-separators",
@@ -24,10 +24,11 @@ public class DeploymentConfigurationTests
     public void SplitDatabaseSettings_PreservePasswordAndRequireTls()
     {
         var settings = Settings();
-        var connection = new MySqlConnectionStringBuilder(DeploymentConfiguration.GetConnectionString(Config(settings)));
+        var connection = new NpgsqlConnectionStringBuilder(DeploymentConfiguration.GetConnectionString(Config(settings)));
         Assert.Equal(settings["Database:Password"], connection.Password);
-        Assert.Equal(MySqlSslMode.Required, connection.SslMode);
-        Assert.Equal((uint)20, connection.MaximumPoolSize);
+        Assert.Equal(SslMode.Require, connection.SslMode);
+        Assert.Equal(20, connection.MaxPoolSize);
+        Assert.Equal(5432, connection.Port);
         DeploymentConfiguration.Validate(Config(settings), false);
     }
 
@@ -42,6 +43,55 @@ public class DeploymentConfigurationTests
         var exception = Record.Exception(() => DeploymentConfiguration.Validate(Config(settings), false));
         if (academicDemo) Assert.Null(exception);
         else Assert.IsType<InvalidOperationException>(exception);
+    }
+
+    [Theory]
+    [InlineData("postgres")]
+    [InlineData("postgresql")]
+    public void RenderDatabaseUrl_DecodesCredentialsAndUsesTls(string scheme)
+    {
+        var settings = Settings();
+        settings["DATABASE_URL"] = $"{scheme}://demo%40user:p%3Ba%3Ass%40word@db.internal:5433/fulltank%5Fav2?sslmode=require";
+        var connection = new NpgsqlConnectionStringBuilder(DeploymentConfiguration.GetConnectionString(Config(settings)));
+        Assert.Equal("db.internal", connection.Host);
+        Assert.Equal(5433, connection.Port);
+        Assert.Equal("demo@user", connection.Username);
+        Assert.Equal("p;a:ss@word", connection.Password);
+        Assert.Equal("fulltank_av2", connection.Database);
+        Assert.Equal(SslMode.Require, connection.SslMode);
+        Assert.Equal(20, connection.MaxPoolSize);
+    }
+
+    [Fact]
+    public void ConnectionString_TakesPrecedenceOverUrlAndSplitSettings()
+    {
+        var settings = Settings();
+        settings["DATABASE_URL"] = "postgresql://ignored:ignored@ignored/url_db";
+        settings["ConnectionStrings:DefaultConnection"] = "Host=chosen;Database=chosen_db;Username=app;Password=test-only;SSL Mode=Require";
+        var connection = new NpgsqlConnectionStringBuilder(DeploymentConfiguration.GetConnectionString(Config(settings)));
+        Assert.Equal("chosen", connection.Host);
+        Assert.Equal("chosen_db", connection.Database);
+    }
+
+    [Theory]
+    [InlineData("Disable")]
+    [InlineData("Allow")]
+    [InlineData("Prefer")]
+    public void PublishedDatabase_RejectsPlaintextFallback(string sslMode)
+    {
+        var settings = Settings();
+        settings["Database:SslMode"] = sslMode;
+        Assert.Throws<InvalidOperationException>(() => DeploymentConfiguration.Validate(Config(settings), false));
+        DeploymentConfiguration.Validate(Config(settings), true);
+    }
+
+    [Fact]
+    public void RenderUrlWithoutPort_UsesPostgresqlDefault()
+    {
+        var connection = new NpgsqlConnectionStringBuilder(DeploymentConfiguration.GetConnectionString(
+            Config(new() { ["DATABASE_URL"] = "postgresql://app:test@db.internal/fulltank" })));
+        Assert.Equal(5432, connection.Port);
+        Assert.Equal(SslMode.Require, connection.SslMode);
     }
 
     [Theory]

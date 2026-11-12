@@ -13,7 +13,7 @@ public sealed class DatabaseHealthCheck(AppDbContext context) : IHealthCheck
         try
         {
             if (!await context.Database.CanConnectAsync(cancellationToken))
-                return HealthCheckResult.Unhealthy("MySQL is unavailable.");
+                return HealthCheckResult.Unhealthy("PostgreSQL is unavailable.");
             if ((await context.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
                 return HealthCheckResult.Unhealthy("Database migrations are pending.");
             return HealthCheckResult.Healthy();

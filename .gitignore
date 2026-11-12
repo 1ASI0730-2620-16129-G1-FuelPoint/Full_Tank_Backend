@@ -14,3 +14,7 @@ opencode.jsonc
 .vscode/
 .serena/
 __pycache__/
+
+.env
+.env.*
+!.env.example

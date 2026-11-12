@@ -1,4 +1,4 @@
-using MySql.Data.MySqlClient;
+using Npgsql;
 
 namespace TechnoSac.FullTank.Platform.Shared.Infrastructure.Deployment;
 
@@ -9,27 +9,66 @@ public static class DeploymentConfiguration
     {
         var existing = configuration.GetConnectionString("DefaultConnection");
         if (!string.IsNullOrWhiteSpace(existing))
-            return Environment.ExpandEnvironmentVariables(existing);
+            return ParseConnectionString(Environment.ExpandEnvironmentVariables(existing));
+
+        var databaseUrl = configuration["DATABASE_URL"];
+        if (!string.IsNullOrWhiteSpace(databaseUrl))
+            return ParseConnectionString(databaseUrl);
 
         var host = configuration["Database:Host"];
         if (string.IsNullOrWhiteSpace(host)) return null;
 
-        var port = configuration.GetValue("Database:Port", 3306);
+        var port = configuration.GetValue("Database:Port", 5432);
         if (port is < 1 or > 65535)
             throw new InvalidOperationException("Database:Port must be between 1 and 65535.");
 
-        return new MySqlConnectionStringBuilder
+        return new NpgsqlConnectionStringBuilder
         {
-            Server = host,
-            Port = (uint)port,
+            Host = host,
+            Port = port,
             Database = configuration["Database:Name"],
-            UserID = configuration["Database:User"],
+            Username = configuration["Database:User"],
             Password = configuration["Database:Password"],
-            SslMode = Enum.Parse<MySqlSslMode>(configuration["Database:SslMode"] ?? "Required", true),
-            ConnectionTimeout = 10,
-            DefaultCommandTimeout = 30,
-            MaximumPoolSize = 20
+            SslMode = Enum.Parse<SslMode>(configuration["Database:SslMode"] ?? "Require", true),
+            Timeout = 10,
+            CommandTimeout = 30,
+            MaxPoolSize = 20
         }.ConnectionString;
+    }
+
+    private static string ParseConnectionString(string value)
+    {
+        NpgsqlConnectionStringBuilder connection;
+        if (value.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+            value.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+                string.IsNullOrWhiteSpace(uri.Host))
+                throw new InvalidOperationException("Invalid PostgreSQL database URL.");
+            var credentials = uri.UserInfo.Split(':', 2);
+            connection = new NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Port = uri.IsDefaultPort ? 5432 : uri.Port,
+                Username = Uri.UnescapeDataString(credentials[0]),
+                Password = credentials.Length == 2 ? Uri.UnescapeDataString(credentials[1]) : null,
+                Database = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')),
+                SslMode = SslMode.Require
+            };
+            foreach (var part in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var pair = part.Split('=', 2);
+                if (pair.Length != 2 || !pair[0].Equals("sslmode", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Only sslmode is supported in a PostgreSQL URL query. Use an Npgsql connection string for other options.");
+                connection.SslMode = Enum.Parse<SslMode>(Uri.UnescapeDataString(pair[1]), true);
+            }
+        }
+        else connection = new NpgsqlConnectionStringBuilder(value);
+
+        connection.MaxPoolSize = Math.Min(connection.MaxPoolSize, 20);
+        connection.Timeout = 10;
+        connection.CommandTimeout = 30;
+        return connection.ConnectionString;
     }
 
     public static string? GetListenUrl(IConfiguration configuration)
@@ -46,12 +85,14 @@ public static class DeploymentConfiguration
 
         var connection = GetConnectionString(configuration);
         if (string.IsNullOrWhiteSpace(connection) || connection.Contains("%DATABASE_"))
-            throw new InvalidOperationException("Configure a real MySQL connection using ConnectionStrings:DefaultConnection or Database:Host/Name/User/Password.");
+            throw new InvalidOperationException("Configure PostgreSQL using ConnectionStrings:DefaultConnection, DATABASE_URL or Database:Host/Name/User/Password.");
 
-        var mysql = new MySqlConnectionStringBuilder(connection);
-        if (string.IsNullOrWhiteSpace(mysql.Database) || string.IsNullOrWhiteSpace(mysql.UserID) ||
-            string.IsNullOrWhiteSpace(mysql.Password))
-            throw new InvalidOperationException("MySQL database name, user and password are required outside Development.");
+        var postgres = new NpgsqlConnectionStringBuilder(connection);
+        if (string.IsNullOrWhiteSpace(postgres.Host) || string.IsNullOrWhiteSpace(postgres.Database) ||
+            string.IsNullOrWhiteSpace(postgres.Username) || string.IsNullOrWhiteSpace(postgres.Password))
+            throw new InvalidOperationException("PostgreSQL host, database name, user and password are required outside Development.");
+        if (postgres.SslMode is SslMode.Disable or SslMode.Allow or SslMode.Prefer)
+            throw new InvalidOperationException("PostgreSQL connections outside Development must require TLS.");
 
         var jwtSecret = configuration["TokenSettings:Secret"];
         if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32 ||

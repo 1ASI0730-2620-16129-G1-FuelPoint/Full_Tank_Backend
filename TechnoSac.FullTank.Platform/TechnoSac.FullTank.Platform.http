@@ -1,0 +1,6 @@
+@TechnoSac.FullTank.Platform_HostAddress = http://localhost:5204
+
+GET {{TechnoSac.FullTank.Platform_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

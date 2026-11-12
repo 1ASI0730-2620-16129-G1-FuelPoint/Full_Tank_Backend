@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TechnoSac.FullTank.Platform.Shared.Infrastructure.Persistence.EntityFrameworkCore.Configuration;
 
 #nullable disable
@@ -17,29 +18,33 @@ namespace TechnoSac.FullTank.Platform.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.8")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("TechnoSac.FullTank.Platform.Catalog.Domain.Model.Aggregates.FavoriteProvider", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<int>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -56,52 +61,54 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<bool>("Available")
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasColumnName("available");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(400)
-                        .HasColumnType("varchar(400)")
+                        .HasColumnType("character varying(400)")
                         .HasColumnName("description");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("fuel_type");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
                     b.Property<decimal>("PricePerLiter")
                         .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)")
+                        .HasColumnType("numeric(12,2)")
                         .HasColumnName("price_per_liter");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -114,27 +121,29 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<int>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Rating")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("rating");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -151,80 +160,82 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<bool>("AutoRefill")
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasColumnName("auto_refill");
 
                     b.Property<int>("Capacity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("capacity");
 
                     b.Property<int?>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<int>("CurrentLevel")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("current_level");
 
                     b.Property<int?>("FavoriteProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("favorite_provider_id");
 
                     b.Property<string>("LastRefillDate")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("last_refill_date");
 
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("location");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
                     b.Property<int>("RefillThreshold")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("refill_threshold");
 
                     b.Property<string>("RequiredFuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("required_fuel_type");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("type");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -237,41 +248,43 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int?>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<int>("EquipmentId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("equipment_id");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("fuel_type");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<int?>("RequestId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("request_id");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -284,64 +297,66 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DeliveredAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("delivered_at");
 
                     b.Property<string>("DestinationLocation")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("destination_location");
 
                     b.Property<string>("DispatchedAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("dispatched_at");
 
                     b.Property<int?>("DriverId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("driver_id");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
                     b.Property<int?>("OrderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("order_id");
 
                     b.Property<string>("OriginLocation")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("origin_location");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<int?>("VehicleId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("vehicle_id");
 
                     b.HasKey("Id")
@@ -358,50 +373,52 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("email");
 
                     b.Property<string>("LicenseNumber")
                         .IsRequired()
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)")
+                        .HasColumnType("character varying(60)")
                         .HasColumnName("license_number");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("phone");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("Status")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -414,54 +431,56 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Brand")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("brand");
 
                     b.Property<int>("Capacity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("capacity");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Model")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("model");
 
                     b.Property<string>("Plate")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("plate");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("Status")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -474,51 +493,53 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("address");
 
                     b.Property<string>("ContactEmail")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("contact_email");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("name");
 
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("varchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
 
                     b.Property<string>("Ruc")
                         .IsRequired()
                         .HasMaxLength(11)
-                        .HasColumnType("varchar(11)")
+                        .HasColumnType("character varying(11)")
                         .HasColumnName("ruc");
 
                     b.Property<string>("Sector")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("sector");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -535,56 +556,58 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
+                        .HasColumnType("character varying(200)")
                         .HasColumnName("address");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("description");
 
                     b.Property<string>("FuelTypesOffered")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("fuel_types_offered");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("name");
 
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("varchar(30)")
+                        .HasColumnType("character varying(30)")
                         .HasColumnName("phone");
 
                     b.Property<decimal>("Rating")
                         .HasPrecision(3, 2)
-                        .HasColumnType("decimal(3,2)")
+                        .HasColumnType("numeric(3,2)")
                         .HasColumnName("rating");
 
                     b.Property<string>("Ruc")
                         .IsRequired()
                         .HasMaxLength(11)
-                        .HasColumnType("varchar(11)")
+                        .HasColumnType("character varying(11)")
                         .HasColumnName("ruc");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -601,49 +624,51 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int?>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("email");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("role");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("username");
 
                     b.HasKey("Id")
@@ -668,72 +693,74 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int>("Capacity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("capacity");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(400)
-                        .HasColumnType("varchar(400)")
+                        .HasColumnType("character varying(400)")
                         .HasColumnName("description");
 
                     b.Property<int>("LowStockThreshold")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("low_stock_threshold");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
                     b.Property<decimal>("PricePerLiter")
                         .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)")
+                        .HasColumnType("numeric(12,2)")
                         .HasColumnName("price_per_liter");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Reserved")
                         .IsConcurrencyToken()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("reserved");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<int>("Stock")
                         .IsConcurrencyToken()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("stock");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("type");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -746,43 +773,45 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<int?>("InventoryItemId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("inventory_item_id");
 
                     b.Property<int?>("OrderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("order_id");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("reason");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("type");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -795,61 +824,63 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int?>("BuyerCompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("buyer_company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<bool>("IsRead")
-                        .HasColumnType("tinyint(1)")
+                        .HasColumnType("boolean")
                         .HasColumnName("is_read");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("varchar(1000)")
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("message");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("RecipientType")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("recipient_type");
 
                     b.Property<int?>("RelatedId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("related_id");
 
                     b.Property<string>("TargetRoute")
                         .IsRequired()
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("target_route");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("title");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("type");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -862,119 +893,121 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int?>("BuyerCompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("buyer_company_id");
 
                     b.Property<string>("CancelReason")
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("cancel_reason");
 
                     b.Property<string>("CancelledAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("cancelled_at");
 
                     b.Property<string>("ClosedAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("closed_at");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DeliveredAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("delivered_at");
 
                     b.Property<string>("DeliveryAddress")
                         .IsRequired()
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("delivery_address");
 
                     b.Property<string>("DispatchedAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("dispatched_at");
 
                     b.Property<int?>("DriverId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("driver_id");
 
                     b.Property<int?>("EquipmentId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("equipment_id");
 
                     b.Property<string>("EstimatedDeliveryDate")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("estimated_delivery_date");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("fuel_type");
 
                     b.Property<string>("PaidAt")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("paid_at");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("payment_status");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<int?>("RequestId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("request_id");
 
                     b.Property<string>("Status")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("total_amount");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)")
+                        .HasColumnType("numeric(12,2)")
                         .HasColumnName("unit_price");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.Property<int?>("VehicleId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("vehicle_id");
 
                     b.HasKey("Id")
@@ -991,88 +1024,90 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int?>("BuyerCompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("buyer_company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("DeliveryAddress")
                         .IsRequired()
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("delivery_address");
 
                     b.Property<string>("DeliveryDate")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("delivery_date");
 
                     b.Property<int?>("EquipmentId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("equipment_id");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("fuel_type");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("product_name");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<string>("RejectionReasonCode")
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)")
+                        .HasColumnType("character varying(60)")
                         .HasColumnName("rejection_reason_code");
 
                     b.Property<string>("RejectionReasonNote")
                         .HasMaxLength(240)
-                        .HasColumnType("varchar(240)")
+                        .HasColumnType("character varying(240)")
                         .HasColumnName("rejection_reason_note");
 
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("source");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)")
+                        .HasColumnType("numeric(12,2)")
                         .HasColumnName("unit_price");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -1085,100 +1120,102 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BuyerName")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("buyer_name");
 
                     b.Property<string>("BuyerRuc")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("buyer_ruc");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("FuelType")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("varchar(80)")
+                        .HasColumnType("character varying(80)")
                         .HasColumnName("fuel_type");
 
                     b.Property<decimal>("Igv")
                         .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("igv");
 
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
                         .HasMaxLength(60)
-                        .HasColumnType("varchar(60)")
+                        .HasColumnType("character varying(60)")
                         .HasColumnName("invoice_number");
 
                     b.Property<string>("IssueDate")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("issue_date");
 
                     b.Property<int?>("OrderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("order_id");
 
                     b.Property<int?>("PaymentId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("payment_id");
 
                     b.Property<string>("ProviderName")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("varchar(160)")
+                        .HasColumnType("character varying(160)")
                         .HasColumnName("provider_name");
 
                     b.Property<string>("ProviderRuc")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("provider_ruc");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("quantity");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<decimal>("Subtotal")
                         .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("subtotal");
 
                     b.Property<decimal>("Total")
                         .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("total");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)")
+                        .HasColumnType("numeric(12,2)")
                         .HasColumnName("unit_price");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
@@ -1203,59 +1240,61 @@ namespace TechnoSac.FullTank.Platform.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)")
+                        .HasColumnType("numeric(14,2)")
                         .HasColumnName("amount");
 
                     b.Property<string>("CardHolder")
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("card_holder");
 
                     b.Property<int?>("CompanyId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("company_id");
 
                     b.Property<DateTimeOffset?>("CreatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
                     b.Property<string>("MaskedCard")
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("masked_card");
 
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("method");
 
                     b.Property<int?>("OrderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("order_id");
 
                     b.Property<int?>("ProviderId")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("provider_id");
 
                     b.Property<string>("Reference")
                         .HasMaxLength(120)
-                        .HasColumnType("varchar(120)")
+                        .HasColumnType("character varying(120)")
                         .HasColumnName("reference");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
-                        .HasColumnType("varchar(40)")
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("status");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetime")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
                     b.HasKey("Id")
