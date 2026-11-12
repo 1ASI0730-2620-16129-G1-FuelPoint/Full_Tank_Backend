@@ -1,55 +1,42 @@
 # FullTank Database MCP
 
-Local STDIO MCP server for the `fulltank_platform` MySQL database. It intentionally does not expose arbitrary SQL.
+Servidor STDIO local para la base PostgreSQL `fulltank_platform`, esquema `public`.
+Es una herramienta de desarrollo y no forma parte de la API ni de su imagen Docker.
+No permite ejecutar SQL arbitrario.
 
-## Tools
+## Herramientas
 
-- `db_list_tables`, `db_describe_table`, `db_count_rows`, `db_select_rows`
-- `db_insert_row`, `db_update_rows`, `db_delete_rows`
+- `db_list_tables`, `db_describe_table`, `db_count_rows`, `db_select_rows`.
+- `db_insert_row`, `db_update_rows`, `db_delete_rows`.
 
-Updates and deletes require a non-empty equality filter and an exact `expectedRows` value. Delete is disabled by default.
+Las lecturas ocultan columnas sensibles. Las escrituras requieren una lista explícita
+de tablas permitidas. Actualizar o eliminar exige filtros no vacíos y un número exacto
+`expectedRows`; la operación usa una transacción serializable y bloquea las filas.
+Eliminar y escribir columnas sensibles están desactivados por defecto.
 
-## Required environment variables
+## Configuración privada
 
-Set these variables for the Windows user that starts Codex/ChatGPT Desktop, and restart the app afterward:
+Definir `FULLTANK_MCP_DB_USER` y `FULLTANK_MCP_DB_PASSWORD` en el entorno del proceso.
+Usar una cuenta PostgreSQL dedicada, sin privilegios de superusuario, con permiso
+`USAGE` del esquema y únicamente los permisos necesarios sobre tablas y secuencias.
+No utilizar las credenciales administrativas de la aplicación.
 
-```powershell
-[Environment]::SetEnvironmentVariable("FULLTANK_MCP_DB_USER", "YOUR_MCP_USER", "User")
-[Environment]::SetEnvironmentVariable("FULLTANK_MCP_DB_PASSWORD", "YOUR_MCP_PASSWORD", "User")
-[Environment]::SetEnvironmentVariable("FULLTANK_MCP_WRITE_TABLES", "provider_products,equipment", "User")
+| Variable | Predeterminado | Uso |
+|---|---|---|
+| `FULLTANK_MCP_DB_HOST` | `127.0.0.1` | Host PostgreSQL |
+| `FULLTANK_MCP_DB_PORT` | `5432` | Puerto |
+| `FULLTANK_MCP_DB_NAME` | `fulltank_platform` | Base |
+| `FULLTANK_MCP_DB_SSL_MODE` | `Require` | TLS; usar `Disable` solo en desarrollo local sin TLS |
+| `FULLTANK_MCP_CONNECTION_STRING` | Sin definir | Conexión completa en formato Npgsql |
+| `FULLTANK_MCP_WRITE_TABLES` | Vacío | Tablas de escritura, separadas por comas |
+| `FULLTANK_MCP_MAX_ROWS` | `25` | Límite máximo, acotado a 100 |
+| `FULLTANK_MCP_ALLOW_DELETE` | `false` | Habilita eliminación |
+| `FULLTANK_MCP_ALLOW_SENSITIVE_WRITES` | `false` | Habilita escrituras sensibles |
+
+```bash
+dotnet build TechnoSac.FullTank.Database.Mcp
+dotnet run --no-build --project TechnoSac.FullTank.Database.Mcp
 ```
 
-Optional variables:
-
-| Variable | Default | Purpose |
-|---|---:|---|
-| `FULLTANK_MCP_DB_HOST` | `127.0.0.1` | MySQL host |
-| `FULLTANK_MCP_DB_PORT` | `3306` | MySQL port |
-| `FULLTANK_MCP_DB_NAME` | `fulltank_platform` | Database |
-| `FULLTANK_MCP_DB_SSL_MODE` | `Disabled` | MySQL TLS mode; local loopback connections also enable RSA public-key retrieval |
-| `FULLTANK_MCP_MAX_ROWS` | `25` | Maximum rows per read or mutation, capped at 100 |
-| `FULLTANK_MCP_ALLOW_DELETE` | `false` | Enables `db_delete_rows` |
-| `FULLTANK_MCP_ALLOW_SENSITIVE_WRITES` | `false` | Enables writes to password/token/secret-like columns |
-| `FULLTANK_MCP_CONNECTION_STRING` | unset | Complete connection string; replaces the individual connection variables |
-
-Do not use the application's `root` connection for the MCP. Use the dedicated account with only `SELECT`, `INSERT`, `UPDATE`, and—if needed—`DELETE` on `fulltank_platform`.
-
-## Build
-
-```powershell
-& "C:\Program Files\dotnet\dotnet.exe" build .\TechnoSac.FullTank.Database.Mcp\TechnoSac.FullTank.Database.Mcp.csproj
-```
-
-The project-level `.codex/config.toml` starts the server with `dotnet run --no-build` and asks for approval on write tools. Build once before restarting Codex.
-
-## OpenCode V2
-
-The repository-level `opencode.jsonc` starts the same STDIO server. OpenCode inherits the `FULLTANK_MCP_*` variables from the Windows process, so restart OpenCode after setting or changing them.
-
-From the backend root, verify the connection with:
-
-```powershell
-opencode mcp list
-```
-
-Inside OpenCode, use `/mcps` to inspect the server. The configuration exposes the tools directly and asks for confirmation before insert, update, or delete operations.
+El cliente MCP debe arrancar ese proceso con transporte STDIO y las variables de
+entorno configuradas. No publicar contraseñas ni archivos de configuración del cliente.

@@ -1,7 +1,7 @@
 using System.Data;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using Npgsql;
 
 internal sealed class DatabaseService(DatabaseSettings settings, ILogger<DatabaseService> logger)
 {
@@ -23,7 +23,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
               AND TABLE_NAME <> '__EFMigrationsHistory'
             ORDER BY TABLE_NAME
             """;
-        command.Parameters.AddWithValue("@schema", settings.Database);
+        command.Parameters.AddWithValue("@schema", "public");
 
         var tables = new List<TableSummary>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -136,16 +136,24 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
             var parameterName = $"@value{index++}";
             columnNames.Add(Quote(column.Name));
             parameterNames.Add(parameterName);
-            command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value));
+            command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value, column.DataType));
         }
 
         command.CommandText =
             $"INSERT INTO {Quote(metadata.Name)} ({string.Join(", ", columnNames)}) " +
             $"VALUES ({string.Join(", ", parameterNames)})";
 
-        var affected = await command.ExecuteNonQueryAsync(cancellationToken);
+        long insertedId = 0;
+        int affected;
+        if (metadata.PrimaryKey.Count == 1 && metadata.Columns[metadata.PrimaryKey[0]].DataType is "integer" or "bigint" or "smallint")
+        {
+            command.CommandText += $" RETURNING {Quote(metadata.PrimaryKey[0])}";
+            insertedId = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken));
+            affected = 1;
+        }
+        else affected = await command.ExecuteNonQueryAsync(cancellationToken);
         logger.LogWarning("MCP database insert on {Table}: {AffectedRows} row(s)", metadata.Name, affected);
-        return new InsertRowResult(metadata.Name, affected, command.LastInsertedId);
+        return new InsertRowResult(metadata.Name, affected, insertedId);
     }
 
     public Task<MutationResult> UpdateRowsAsync(
@@ -211,7 +219,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
                 {
                     var parameterName = $"@value{index++}";
                     assignments.Add($"{Quote(column.Name)} = {parameterName}");
-                    command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value));
+                    command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value, column.DataType));
                 }
 
                 command.CommandText =
@@ -243,8 +251,8 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
     }
 
     private async Task<List<object?[]>> LockTargetKeysAsync(
-        MySqlConnection connection,
-        MySqlTransaction transaction,
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
         TableMetadata metadata,
         Dictionary<string, JsonElement> filters,
         CancellationToken cancellationToken)
@@ -274,7 +282,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
     }
 
     private static string BuildPrimaryKeyPredicate(
-        MySqlCommand command,
+        NpgsqlCommand command,
         TableMetadata metadata,
         IReadOnlyList<object?[]> keys)
     {
@@ -335,7 +343,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
     }
 
     private static string BuildWhere(
-        MySqlCommand command,
+        NpgsqlCommand command,
         TableMetadata metadata,
         Dictionary<string, JsonElement>? filters,
         string parameterPrefix)
@@ -356,7 +364,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
 
             var parameterName = $"@{parameterPrefix}{index++}";
             predicates.Add($"{Quote(column.Name)} = {parameterName}");
-            command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value));
+            command.Parameters.AddWithValue(parameterName, JsonValueConverter.ToDatabaseValue(value, column.DataType));
         }
 
         return $" WHERE {string.Join(" AND ", predicates)}";
@@ -370,13 +378,25 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
         await using var connection = await OpenConnectionAsync(cancellationToken);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY,
-                   EXTRA, GENERATION_EXPRESSION, COLUMN_DEFAULT
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @table
-            ORDER BY ORDINAL_POSITION
+            SELECT c.column_name, c.data_type, c.udt_name, c.is_nullable,
+                   CASE WHEN EXISTS (
+                       SELECT 1 FROM information_schema.table_constraints tc
+                       JOIN information_schema.key_column_usage kcu
+                         ON tc.constraint_catalog = kcu.constraint_catalog
+                        AND tc.constraint_schema = kcu.constraint_schema
+                        AND tc.constraint_name = kcu.constraint_name
+                       WHERE tc.constraint_type = 'PRIMARY KEY'
+                         AND tc.table_schema = c.table_schema AND tc.table_name = c.table_name
+                         AND kcu.column_name = c.column_name
+                   ) THEN 'PRI' ELSE '' END,
+                   CASE WHEN c.is_identity = 'YES' OR c.column_default LIKE 'nextval(%'
+                        THEN 'identity' ELSE '' END,
+                   c.generation_expression, c.column_default
+            FROM information_schema.columns c
+            WHERE c.table_schema = @schema AND c.table_name = @table
+            ORDER BY c.ordinal_position
             """;
-        command.Parameters.AddWithValue("@schema", settings.Database);
+        command.Parameters.AddWithValue("@schema", "public");
         command.Parameters.AddWithValue("@table", table);
 
         var columns = new Dictionary<string, ColumnMetadata>(StringComparer.OrdinalIgnoreCase);
@@ -398,7 +418,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
                 reader.GetString(2),
                 string.Equals(reader.GetString(3), "YES", StringComparison.OrdinalIgnoreCase),
                 isPrimaryKey,
-                extra.Contains("auto_increment", StringComparison.OrdinalIgnoreCase),
+                extra.Equals("identity", StringComparison.OrdinalIgnoreCase),
                 !string.IsNullOrWhiteSpace(generatedExpression),
                 IsSensitive(name),
                 reader.IsDBNull(7) ? null : reader.GetValue(7));
@@ -410,9 +430,9 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
         return new TableMetadata(table, columns, primaryKey);
     }
 
-    private async Task<MySqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
+    private async Task<NpgsqlConnection> OpenConnectionAsync(CancellationToken cancellationToken)
     {
-        var connection = new MySqlConnection(settings.ConnectionString);
+        var connection = new NpgsqlConnection(settings.ConnectionString);
         try
         {
             await connection.OpenAsync(cancellationToken);
@@ -443,7 +463,7 @@ internal sealed class DatabaseService(DatabaseSettings settings, ILogger<Databas
         SensitiveColumnNames.Contains(name) ||
         SensitiveColumnNames.Any(sensitive => name.Contains(sensitive, StringComparison.OrdinalIgnoreCase));
 
-    private static string Quote(string identifier) => $"`{identifier.Replace("`", "``")}`";
+    private static string Quote(string identifier) => "\"" + identifier.Replace("\"", "\"\"") + "\"";
 
     private static object? NormalizeOutput(object? value) => value switch
     {

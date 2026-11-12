@@ -53,10 +53,14 @@ internal sealed record ColumnMetadata(
 
 internal static class JsonValueConverter
 {
-    public static object ToDatabaseValue(JsonElement value) => value.ValueKind switch
+    public static object ToDatabaseValue(JsonElement value, string dataType) => value.ValueKind switch
     {
         JsonValueKind.Null or JsonValueKind.Undefined => DBNull.Value,
-        JsonValueKind.String when value.TryGetDateTime(out var dateTime) => dateTime,
+        JsonValueKind.String when dataType == "timestamp with time zone" =>
+            DateTimeOffset.Parse(value.GetString()!, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime(),
+        JsonValueKind.String when dataType == "timestamp without time zone" =>
+            DateTime.SpecifyKind(DateTime.Parse(value.GetString()!, System.Globalization.CultureInfo.InvariantCulture), DateTimeKind.Unspecified),
+        JsonValueKind.String when dataType == "date" => DateOnly.Parse(value.GetString()!, System.Globalization.CultureInfo.InvariantCulture),
         JsonValueKind.String => value.GetString()!,
         JsonValueKind.Number when value.TryGetInt64(out var integer) => integer,
         JsonValueKind.Number when value.TryGetDecimal(out var number) => number,

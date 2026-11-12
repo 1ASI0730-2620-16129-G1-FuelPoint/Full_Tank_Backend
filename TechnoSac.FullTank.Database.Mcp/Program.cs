@@ -22,7 +22,7 @@ builder.Services
             Version = "1.0.0"
         };
         options.ServerInstructions =
-            "Local MCP for the fulltank_platform MySQL database. Use read tools to inspect schema and rows before a mutation. " +
+            "Local MCP for the fulltank_platform PostgreSQL database. Use read tools to inspect schema and rows before a mutation. " +
             "Write tools only accept parameterized values, require an explicit table allow-list, and updates/deletes require " +
             "a non-empty equality filter plus the exact expected row count. Never try to bypass these safeguards.";
     })

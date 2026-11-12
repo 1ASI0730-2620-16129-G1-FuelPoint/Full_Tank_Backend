@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the AV2 images against a NEW disposable MySQL volume, then remove all test resources."""
+"""Verify the AV2 images against a NEW disposable PostgreSQL volume, then remove all test resources."""
 import json
 from email import message_from_string
 import os
@@ -19,7 +19,7 @@ def request(path, data=None, token=None, method=None, headers=None):
     request_headers = {"Content-Type": "application/json", **(headers or {})}
     if token:
         request_headers["Authorization"] = "Bearer " + token
-    # Use the curl already included in MySQL's image. Requests cross the private
+    # Use a separate curl probe container. Requests cross the private
     # Docker network, so this also works on hosts without container port forwarding.
     config = ["url = " + json.dumps(f"http://{api}:10001{path}"), "include", "silent",
               "show-error", "max-time = 10", 'noproxy = "*"',
@@ -28,7 +28,7 @@ def request(path, data=None, token=None, method=None, headers=None):
         config.append("header = " + json.dumps(key + ": " + value))
     if data is not None:
         config.append("data = " + json.dumps(json.dumps(data)))
-    result = subprocess.run(["docker", "exec", "-i", db, "curl", "--config", "-"],
+    result = subprocess.run(["docker", "exec", "-i", probe, "curl", "--config", "-"],
                             input="\n".join(config), capture_output=True, text=True)
     if result.returncode:
         raise OSError("Container HTTP probe failed: " + result.stderr.strip())
@@ -56,12 +56,12 @@ def wait_for(path, status, seconds=120):
 
 
 prefix = "fulltank-av2-check-" + secrets.token_hex(4)
-db, api, network, volume = [prefix + suffix for suffix in ("-db", "-api", "-net", "-data")]
+db, api, network, volume, probe = [prefix + suffix for suffix in ("-db", "-api", "-net", "-data", "-probe")]
 db_password, demo_password = secrets.token_urlsafe(32), secrets.token_urlsafe(20)
-environment = dict(os.environ, MYSQL_DATABASE="fulltank_av2", MYSQL_USER="fulltank",
-                   MYSQL_PASSWORD=db_password, MYSQL_ROOT_PASSWORD=secrets.token_urlsafe(32))
+environment = dict(os.environ, POSTGRES_DB="fulltank_av2", POSTGRES_USER="fulltank",
+                   POSTGRES_PASSWORD=db_password)
 runtime_settings = dict(ASPNETCORE_ENVIRONMENT="Production", PORT="10001",
-    Database__Host="mysql", Database__Name="fulltank_av2", Database__User="fulltank",
+    Database__Host="postgres", Database__Name="fulltank_av2", Database__User="fulltank",
     Database__Password=db_password, Database__DemoPassword=demo_password,
     TokenSettings__Secret=secrets.token_urlsafe(48),
     Cors__AllowedOrigins__0="https://full-tank-964e2.web.app",
@@ -83,21 +83,31 @@ def start_api(initialize):
 try:
     docker("network", "create", network)
     docker("volume", "create", volume)
-    arguments = ["run", "-d", "--name", db, "--network", network, "--network-alias", "mysql",
-                 "--memory", "512m", "-v", volume + ":/var/lib/mysql"]
-    for key in ("MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_ROOT_PASSWORD"):
+    arguments = ["run", "-d", "--name", db, "--network", network, "--network-alias", "postgres",
+                 "--memory", "256m", "-v", volume + ":/var/lib/postgresql"]
+    for key in ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"):
         arguments += ["-e", key]
-    docker(*arguments, "fulltank-av2-mysql:local", env=environment)
-    print("Started isolated MySQL (512 MB) and a disposable persistent volume.", flush=True)
+    # Generate a short-lived self-signed certificate inside this disposable container.
+    startup = ("mkdir -p /tmp/fulltank-tls && "
+        "openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=postgres "
+        "-keyout /tmp/fulltank-tls/server.key -out /tmp/fulltank-tls/server.crt >/dev/null 2>&1 && "
+        "chown -R postgres:postgres /tmp/fulltank-tls && chmod 600 /tmp/fulltank-tls/server.key && "
+        "exec docker-entrypoint.sh postgres -c ssl=on "
+        "-c ssl_cert_file=/tmp/fulltank-tls/server.crt -c ssl_key_file=/tmp/fulltank-tls/server.key "
+        "-c shared_buffers=32MB -c max_connections=30")
+    docker(*arguments, "postgres:18", "sh", "-c", startup, env=environment)
+    docker("run", "-d", "--name", probe, "--network", network, "--entrypoint", "sh",
+           "curlimages/curl:8.12.1", "-c", "sleep 3600")
+    print("Started isolated PostgreSQL 18 with TLS (256 MB) and a disposable persistent volume.", flush=True)
     for _ in range(120):
         ready = docker("exec", db, "sh", "-c",
-            'MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u "$MYSQL_USER" -D "$MYSQL_DATABASE" -e "SELECT 1"',
+            'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "SELECT 1"',
             check=False)
-        if ready:
+        if ready == "1":
             break
         time.sleep(1)
     else:
-        raise RuntimeError("MySQL did not initialize")
+        raise RuntimeError("PostgreSQL did not initialize")
 
     start_api(False)
     wait_for("/health/live", 200)
@@ -140,12 +150,12 @@ try:
     assert status == 200 and len(orders) == 3, "Restart must not duplicate demo orders"
     status, payments, _ = request("/api/v1/payments", token=tokens["buyer"])
     assert status == 200 and any(item["id"] == payment_id for item in payments)
-    print("API/MySQL restart preserved the payment and did not duplicate seed data. PASS", flush=True)
+    print("API/PostgreSQL restart preserved the payment and did not duplicate seed data. PASS", flush=True)
 except Exception:
     print("API diagnostic log:\n" + docker("logs", "--tail", "35", api, check=False), flush=True)
     raise
 finally:
     # Only resources created by this invocation are removed. Existing local services are untouched.
-    docker("rm", "-f", api, db, check=False)
+    docker("rm", "-f", api, db, probe, check=False)
     docker("volume", "rm", volume, check=False)
     docker("network", "rm", network, check=False)

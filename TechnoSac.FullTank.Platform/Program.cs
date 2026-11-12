@@ -130,7 +130,7 @@ builder.Services.AddControllers(options => options.Conventions.Add(new KebabCase
 // Add ProblemDetails services (RFC 7807).
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks()
-    .AddCheck<DatabaseHealthCheck>("mysql", timeout: TimeSpan.FromSeconds(5));
+    .AddCheck<DatabaseHealthCheck>("postgresql", timeout: TimeSpan.FromSeconds(5));
 
 // Add CORS Policy for the frontend, reading allowed origins from configuration.
 var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
@@ -152,7 +152,7 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
     if (string.IsNullOrWhiteSpace(connectionString))
         throw new InvalidOperationException("Database connection string is not set in the configuration.");
 
-    options.UseMySQL(connectionString)
+    options.UseNpgsql(connectionString)
         .UseLoggerFactory(serviceProvider.GetRequiredService<ILoggerFactory>())
         .EnableDetailedErrors();
 
@@ -335,7 +335,7 @@ if (applyMigrations || seedDemoData)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex,
-            "Could not apply database migrations on startup. Ensure MySQL is running and the connection string is correct.");
+            "Could not apply database migrations on startup. Ensure PostgreSQL is running and the connection string is correct.");
         if (!app.Environment.IsDevelopment())
             throw new InvalidOperationException("Database initialization failed; deployment cannot become ready.", ex);
     }

@@ -17,8 +17,8 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <!-- MySQL Database Persistence related packages -->
-        <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.7"/>
+        <!-- PostgreSQL Database Persistence related packages -->
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <!-- Naming convention conversion related packages -->
         <PackageReference Include="Humanizer" Version="3.0.10"/>
         <!-- OpenAPI documentation related packages -->
